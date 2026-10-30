@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Panel de Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Panel de Analytics</h1>
+    <div class="card">
+      <h2 id="linkTitle"></h2>
+      <p><strong>URL destino:</strong> <a id="targetUrl" href="#"></a></p>
+      <p><strong>Total de clicks:</strong> <span id="totalClicks">0</span></p>
+    </div>
+    
+    <div class="card">
+      <h2>Actividad</h2>
+      <div id="clicksList"></div>
+    </div>
+  </div>
+
+  <script>
+    const id = window.location.pathname.split('/').pop();
+    
+    async function loadStats() {
+      const res = await fetch(`/api/stats/${id}`);
+      const data = await res.json();
+      
+      document.getElementById('linkTitle').textContent = data.title;
+      document.getElementById('targetUrl').textContent = data.targetUrl;
+      document.getElementById('targetUrl').href = data.targetUrl;
+      document.getElementById('totalClicks').textContent = data.clicks.length;
+      
+      const list = document.getElementById('clicksList');
+      list.innerHTML = data.clicks.map(c => `
+        <div class="click-item">
+          <strong>🕐 ${new Date(c.timestamp).toLocaleString()}</strong>
+          <p>📱 <strong>Dispositivo:</strong> ${c.device.vendor} ${c.device.model} (${c.device.type})</p>
+          <p>💻 <strong>SO:</strong> ${c.os.name} ${c.os.version}</p>
+          <p>🌐 <strong>Navegador:</strong> ${c.browser.name} ${c.browser.version}</p>
+          <p>📍 <strong>Ubicación:</strong> ${c.location ? 
+            `${c.location.city}, ${c.location.region}, ${c.location.country} 
+             (Lat: ${c.location.ll[0]}, Lon: ${c.location.ll[1]})` : 
+            'No disponible'}</p>
+          <p>🔢 <strong>IP:</strong> ${c.ip}</p>
+        </div>
+      `).join('') || '<p>Aún no hay clicks</p>';
+    }
+    
+    loadStats();
+    setInterval(loadStats, 5000); // Actualizar cada 5 segundos
+  </script>
+</body>
+</html>

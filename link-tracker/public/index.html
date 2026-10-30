@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generador de Enlaces</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🔗 Generador de Enlaces con Analytics</h1>
+    
+    <div class="card">
+      <h2>Crear nuevo enlace</h2>
+      <form id="createForm">
+        <label>Título (opcional):</label>
+        <input type="text" id="title" placeholder="Mi enlace">
+        
+        <label>URL destino:</label>
+        <input type="url" id="targetUrl" placeholder="https://ejemplo.com" required>
+        
+        <button type="submit">Generar enlace</button>
+      </form>
+      
+      <div id="result" class="hidden">
+        <h3>✅ Enlace creado</h3>
+        <p><strong>Enlace para compartir:</strong></p>
+        <div class="link-box">
+          <input type="text" id="shortUrl" readonly>
+          <button onclick="copyLink('shortUrl')">Copiar</button>
+        </div>
+        <p><strong>Panel de control:</strong></p>
+        <div class="link-box">
+          <input type="text" id="dashboardUrl" readonly>
+          <button onclick="copyLink('dashboardUrl')">Copiar</button>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Mis enlaces</h2>
+      <div id="linksList"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const targetUrl = document.getElementById('targetUrl').value;
+      const title = document.getElementById('title').value;
+      
+      const res = await fetch('/api/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ targetUrl, title })
+      });
+      
+      const data = await res.json();
+      document.getElementById('shortUrl').value = data.shortUrl;
+      document.getElementById('dashboardUrl').value = data.dashboardUrl;
+      document.getElementById('result').classList.remove('hidden');
+      loadLinks();
+    });
+    
+    function copyLink(id) {
+      const input = document.getElementById(id);
+      input.select();
+      document.execCommand('copy');
+      alert('¡Copiado!');
+    }
+    
+    async function loadLinks() {
+      const res = await fetch('/api/links');
+      const links = await res.json();
+      const list = document.getElementById('linksList');
+      list.innerHTML = links.map(l => `
+        <div class="link-item">
+          <strong>${l.title}</strong><br>
+          <small>${l.targetUrl}</small><br>
+          <span>Clicks: ${l.clicks.length}</span>
+          <a href="/dashboard/${l.id}">Ver panel</a>
+        </div>
+      `).join('') || '<p>No hay enlaces aún</p>';
+    }
+    
+    loadLinks();
+  </script>
+</body>
+</html>
